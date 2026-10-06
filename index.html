@@ -101,11 +101,11 @@
   <ul id="lista"></ul>
   <p id="vazio" class="empty" hidden>Nenhum contato encontrado.</p>
 
-  <footer>A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.<br>Lista de Contatos de Músicos · v5</footer>
+  <footer>A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.<br>Lista de Contatos de Músicos · v6</footer>
 </div>
 
 <script>
-let CONTATOS = [];   // carregado de Lista_Contatos_Musicos_v5.json
+let CONTATOS = [];   // carregado de Lista_Contatos_Musicos_v6_contatos.json (cada contato ganha coords a partir de Lista_Contatos_Musicos_v6_cidades.json)
 
 
 /* ---------- utilitários ---------- */
@@ -215,7 +215,7 @@ function render(){
   lista.textContent = "";
 
   const visiveis = ordem.filter(c =>
-    !q || norm(c.nome+" "+c.cidade+" "+c.instrumentos.join(" ")).includes(q)
+    !q || norm(c.nome+" "+(c.cidades||[]).join(" ")+" "+c.instrumentos.join(" ")).includes(q)
   );
 
   visiveis.forEach(c => {
@@ -233,7 +233,7 @@ function render(){
     const local = document.createElement("div");
     local.className = "line";
     const d = distanciaDe(c);
-    local.textContent = "📍 " + c.cidade + (isFinite(d) ? " · " + textoDist(d) : "");
+    local.textContent = "📍 " + (c.cidades||[]).join(" e ") + (isFinite(d) ? " · " + textoDist(d) : "");
 
     const tags = document.createElement("div");
     tags.className = "tags";
@@ -284,11 +284,28 @@ $("perto").addEventListener("click", () => {
   }
 });
 
+async function carregarJSON(arquivo){
+  const r = await fetch(arquivo, {cache:"no-store"});
+  if(!r.ok) throw new Error(arquivo + " " + r.status);
+  return r.json();
+}
+
 async function iniciar(){
   try{
-    const r = await fetch("Lista_Contatos_Musicos_v5.json", {cache:"no-store"});
-    if(!r.ok) throw new Error(r.status);
-    CONTATOS = await r.json();
+    const [contatos, cidades] = await Promise.all([
+      carregarJSON("Lista_Contatos_Musicos_v6_contatos.json"),
+      carregarJSON("Lista_Contatos_Musicos_v6_cidades.json")
+    ]);
+    // nome da cidade -> [lat, lon]; ignora maiúsculas, acentos e espaços nas pontas
+    const mapa = new Map(Object.entries(cidades).map(([n, v]) => [norm(n.trim()), [v.lat, v.lon]]));
+    const chave = n => norm(String(n||"").trim());
+    CONTATOS = contatos.map(c => ({
+      ...c,
+      cidades: Array.isArray(c.cidades) ? c.cidades : [],
+      coords: (Array.isArray(c.cidades) ? c.cidades : []).map(n => mapa.get(chave(n))).filter(Boolean)
+    }));
+    const faltam = [...new Set(contatos.flatMap(c => (c.cidades||[]).filter(n => !mapa.has(chave(n)))))];
+    if(faltam.length) console.warn("Cidades sem coordenadas em Lista_Contatos_Musicos_v6_cidades.json:", faltam);
     ordem = ordenar();   // sorteio a cada abertura da página
     render();
     pedirLocalizacao();  // se liberada, reordena por proximidade
@@ -307,7 +324,7 @@ iniciar();
 <!--
 ================================================================
  LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
- Arquivo: Lista_Contatos_Musicos_v5.html  (dados em Lista_Contatos_Musicos_v5.json)
+ Arquivo: Lista_Contatos_Musicos_v6.html  (dados em Lista_Contatos_Musicos_v6_contatos.json e Lista_Contatos_Musicos_v6_cidades.json)
 ================================================================
 
 v1 — 2026-10-06
@@ -362,6 +379,24 @@ v5 — 2026-10-06
     difere menos de 25 km fica embaralhado junto.
   - A localização fica só na memória do aparelho: não é enviada nem
     salva.
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
+    do Tin Fernandes (não informado).
+----------------------------------------------------------------
+v6 — 2026-10-06
+  - Banco de cidades separado dos contatos: novo arquivo
+    Lista_Contatos_Musicos_v6_cidades.json, com o nome de cada cidade
+    e suas coordenadas (lat, lon), escritas uma única vez.
+  - Contatos (Lista_Contatos_Musicos_v6_contatos.json): o campo cidade
+    (texto) e o campo coords saíram; entrou "cidades", uma lista só
+    com os nomes (ex.: ["Franca/SP", "Araxá/MG"]).
+  - O HTML carrega os dois arquivos e liga cada contato às
+    coordenadas pelo nome da cidade (ignora maiúsculas, acentos e
+    espaços nas pontas). Cidade que não estiver no arquivo de cidades
+    fica sem distância e vai para o fim da ordenação; o nome aparece no
+    console do navegador (aviso "Cidades sem coordenadas").
+  - Ordenação, distâncias e botões iguais aos da v5.
+  - 10 cidades cadastradas (as mesmas da v5).
   - Pendências: coordenadas aproximadas (centro de cada cidade);
     número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
     do Tin Fernandes (não informado).
