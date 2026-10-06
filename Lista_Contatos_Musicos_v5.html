@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Contatos de Acordeonistas</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#ffffff; --text:#1d1b16; --muted:#6d685c;
+    --line:#e6e1d4; --accent:#b4531a; --accent-soft:#f6e6d9; --wpp:#1fa855; --wpp-dark:#178a45;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14120f; --card:#1e1b17; --text:#f1ece1; --muted:#a39d8f;
+      --line:#2e2a23; --accent:#e08a4f; --accent-soft:#33261b; --wpp:#25b862; --wpp-dark:#1fa055;
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:20px 16px 40px}
+  header{padding:12px 0 16px}
+  h1{margin:0 0 4px; font-size:1.55rem; letter-spacing:-.01em}
+  .sub{margin:0; color:var(--muted); font-size:.95rem}
+  .tools{position:sticky; top:0; z-index:5; background:var(--bg); padding:10px 0 12px}
+  .search{
+    width:100%; padding:13px 14px; font-size:1rem; color:var(--text);
+    background:var(--card); border:1px solid var(--line); border-radius:12px; outline:none;
+  }
+  .search:focus{border-color:var(--accent)}
+  .meta{display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:.82rem; color:var(--muted)}
+  .shuffle{
+    background:none; border:1px solid var(--line); color:var(--muted); border-radius:999px;
+    padding:5px 11px; font-size:.8rem; cursor:pointer;
+  }
+  .shuffle:active{background:var(--accent-soft)}
+  .botoes{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end}
+  .status{margin-top:7px; font-size:.8rem; color:var(--muted); min-height:1.1em}
+  ul{list-style:none; margin:0; padding:0; display:grid; gap:10px}
+  li.card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px; display:grid; grid-template-columns:48px 1fr; gap:12px; align-items:start;
+  }
+  .avatar{
+    width:48px; height:48px; border-radius:50%; background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.05rem;
+  }
+  .name{font-weight:650; font-size:1.05rem; line-height:1.25; overflow-wrap:anywhere}
+  .line{color:var(--muted); font-size:.88rem; margin-top:3px}
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .tag{
+    display:inline-block; background:var(--accent-soft); color:var(--accent);
+    font-size:.78rem; font-weight:600; padding:3px 10px; border-radius:999px;
+  }
+  .tag.acordeon{background:#f6e6d9; color:#b4531a}
+  .tag.teclado{background:#e0e9f8; color:#2c5aa0}
+  .tag.violao{background:#e3f1e0; color:#3c7a32}
+  .tag.vocal{background:#f4e0ee; color:#963a7e}
+  @media (prefers-color-scheme: dark){
+    .tag.acordeon{background:#33261b; color:#e08a4f}
+    .tag.teclado{background:#1b2638; color:#7fa8e6}
+    .tag.violao{background:#1d2e1a; color:#86c77a}
+    .tag.vocal{background:#33202d; color:#e08cc9}
+  }
+  .actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; text-decoration:none; font-size:.92rem; font-weight:600;
+    padding:10px 14px; border-radius:10px; border:1px solid var(--line); color:var(--text); background:transparent;
+  }
+  .btn.wpp{background:var(--wpp); border-color:var(--wpp); color:#fff}
+  .btn.wpp:active{background:var(--wpp-dark)}
+  .btn svg{width:18px; height:18px; fill:currentColor}
+  .empty{text-align:center; color:var(--muted); padding:40px 0}
+  footer{margin-top:26px; text-align:center; color:var(--muted); font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🪗 Contatos de Acordeonistas</h1>
+    <p class="sub">Toque em WhatsApp para chamar direto.</p>
+  </header>
+
+  <div class="tools">
+    <input id="busca" class="search" type="search" placeholder="Buscar por nome, cidade ou instrumento…" autocomplete="off">
+    <div class="meta">
+      <span id="contador"></span>
+      <span class="botoes">
+        <button id="perto" class="shuffle" type="button">📍 Perto de mim</button>
+        <button id="embaralhar" class="shuffle" type="button">🔀 Embaralhar</button>
+      </span>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <ul id="lista"></ul>
+  <p id="vazio" class="empty" hidden>Nenhum contato encontrado.</p>
+
+  <footer>A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.<br>Lista de Contatos de Músicos · v5</footer>
+</div>
+
+<script>
+let CONTATOS = [];   // carregado de Lista_Contatos_Musicos_v5.json
+
+
+/* ---------- utilitários ---------- */
+const $ = id => document.getElementById(id);
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+// Fisher-Yates com gerador aleatório do navegador
+function embaralhar(arr){
+  const a = arr.slice();
+  const buf = new Uint32Array(1);
+  for(let i=a.length-1;i>0;i--){
+    crypto.getRandomValues(buf);
+    const j = buf[0] % (i+1);
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+const FAIXA_KM = 0;   // 0 = só empata quem está na mesma cidade; ex.: 25 = quem difere menos de 25 km fica embaralhado
+let pos = null;       // posição da pessoa; fica só na memória do aparelho
+
+function distKm(a, b){
+  const R = 6371, rad = x => x*Math.PI/180;
+  const dLat = rad(b[0]-a[0]), dLon = rad(b[1]-a[1]);
+  const h = Math.sin(dLat/2)**2 + Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+
+// menor distância até qualquer cidade do contato; Infinity se não houver localização/coordenadas
+function distanciaDe(c){
+  if(!pos || !Array.isArray(c.coords) || !c.coords.length) return Infinity;
+  return Math.min(...c.coords.map(p => distKm([pos.lat, pos.lon], p)));
+}
+
+// 1º sorteia tudo; 2º, se houver localização, ordena por distância (a ordenação é estável,
+// então os empates mantêm a ordem aleatória do sorteio)
+function ordenar(){
+  const base = embaralhar(CONTATOS);
+  if(!pos) return base;
+  const chave = c => {
+    const d = distanciaDe(c);
+    return (FAIXA_KM > 0 && isFinite(d)) ? Math.floor(d / FAIXA_KM) : d;
+  };
+  const k = new Map(base.map(c => [c, chave(c)]));
+  return base.sort((x, y) => {
+    const a = k.get(x), b = k.get(y);
+    return a === b ? 0 : (a < b ? -1 : 1);
+  });
+}
+
+function textoDist(d){ return d < 5 ? "menos de 5 km" : "≈ " + Math.round(d) + " km"; }
+function status(t){ $("status").textContent = t; }
+function atualizarBotao(){ $("perto").textContent = pos ? "📍 Só aleatório" : "📍 Perto de mim"; }
+
+function pedirLocalizacao(){
+  if(!("geolocation" in navigator)){
+    status("Seu navegador não oferece localização. Lista em ordem aleatória.");
+    return;
+  }
+  status("Pedindo sua localização…");
+  navigator.geolocation.getCurrentPosition(p => {
+    pos = {lat:p.coords.latitude, lon:p.coords.longitude};
+    ordem = ordenar();
+    atualizarBotao(); render();
+    status("📍 Do mais perto para o mais longe (em linha reta). Na mesma cidade, a ordem é aleatória.");
+  }, err => {
+    atualizarBotao();
+    status(err && err.code === 1
+      ? "Localização não liberada. Lista em ordem aleatória. Para usar, libere nas configurações do navegador."
+      : "Não consegui pegar sua localização. Lista em ordem aleatória.");
+  }, {enableHighAccuracy:false, timeout:10000, maximumAge:600000});
+}
+
+function iniciais(nome){
+  const p = nome.trim().split(/\s+/);
+  return (p[0][0] + (p.length>1 ? p[p.length-1][0] : "")).toUpperCase();
+}
+
+function linkInstagram(v){
+  if(!v) return "";
+  v = v.trim();
+  if(/^https?:\/\//i.test(v)) return v;
+  return "https://www.instagram.com/" + v.replace(/^@/,"");
+}
+
+function linkWhatsapp(num){
+  const d = (num||"").replace(/\D/g,"");
+  if(!d) return "";
+  return "https://wa.me/" + (d.startsWith("55") && d.length>11 ? d : "55"+d);
+}
+
+function formatarTel(num){
+  const d = (num||"").replace(/\D/g,"");
+  if(d.length===11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return d;
+}
+
+const ICONE_WPP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2a9.93 9.93 0 0 0-8.5 15.07L2 22l5.07-1.5A9.93 9.93 0 1 0 12.04 2Zm5.8 14.1c-.25.7-1.45 1.33-2 1.4-.52.07-1.17.1-1.9-.12a17 17 0 0 1-1.72-.64c-3.03-1.31-5-4.37-5.15-4.57-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.6-.38.8-.38l.58.01c.19.01.43-.07.67.5.25.6.85 2.07.92 2.22.08.15.13.33.03.52-.1.2-.15.32-.3.5-.15.17-.32.38-.45.51-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.13 1 2.09 1.32 2.39 1.47.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.35.08.12.08.72-.17 1.42Z"/></svg>';
+
+/* ---------- estado e renderização ---------- */
+let ordem = [];
+
+function render(){
+  const q = norm($("busca").value.trim());
+  const lista = $("lista");
+  lista.textContent = "";
+
+  const visiveis = ordem.filter(c =>
+    !q || norm(c.nome+" "+c.cidade+" "+c.instrumentos.join(" ")).includes(q)
+  );
+
+  visiveis.forEach(c => {
+    const li = document.createElement("li");
+    li.className = "card";
+
+    const av = document.createElement("div");
+    av.className = "avatar"; av.textContent = iniciais(c.nome);
+
+    const corpo = document.createElement("div");
+
+    const nome = document.createElement("div");
+    nome.className = "name"; nome.textContent = c.nome;
+
+    const local = document.createElement("div");
+    local.className = "line";
+    const d = distanciaDe(c);
+    local.textContent = "📍 " + c.cidade + (isFinite(d) ? " · " + textoDist(d) : "");
+
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    c.instrumentos.forEach(inst => {
+      const t = document.createElement("span");
+      t.className = "tag " + norm(inst).replace(/[^a-z]/g,"");
+      t.textContent = inst;
+      tags.appendChild(t);
+    });
+
+    const acoes = document.createElement("div");
+    acoes.className = "actions";
+
+    const w = linkWhatsapp(c.whatsapp);
+    if(w){
+      const a = document.createElement("a");
+      a.className = "btn wpp"; a.href = w; a.target = "_blank"; a.rel = "noopener";
+      a.innerHTML = ICONE_WPP + "<span></span>";
+      a.querySelector("span").textContent = "WhatsApp";
+      acoes.appendChild(a);
+    }
+    const ig = linkInstagram(c.instagram);
+    if(ig){
+      const a = document.createElement("a");
+      a.className = "btn"; a.href = ig; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = "Instagram";
+      acoes.appendChild(a);
+    }
+
+    corpo.append(nome, local, tags, acoes);
+    li.append(av, corpo);
+    lista.appendChild(li);
+  });
+
+  $("vazio").hidden = visiveis.length > 0;
+  $("contador").textContent = visiveis.length + (visiveis.length===1 ? " contato" : " contatos");
+}
+
+$("busca").addEventListener("input", render);
+$("embaralhar").addEventListener("click", () => { ordem = ordenar(); render(); });
+$("perto").addEventListener("click", () => {
+  if(pos){
+    pos = null; ordem = ordenar();
+    atualizarBotao(); render();
+    status("Ordem aleatória.");
+  }else{
+    pedirLocalizacao();
+  }
+});
+
+async function iniciar(){
+  try{
+    const r = await fetch("Lista_Contatos_Musicos_v5.json", {cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    CONTATOS = await r.json();
+    ordem = ordenar();   // sorteio a cada abertura da página
+    render();
+    pedirLocalizacao();  // se liberada, reordena por proximidade
+  }catch(e){
+    $("contador").textContent = "";
+    const v = $("vazio");
+    v.hidden = false;
+    v.textContent = "Não consegui carregar a lista. Abra pelo link do site (não pelo arquivo direto).";
+  }
+}
+iniciar();
+</script>
+</body>
+</html>
+
+<!--
+================================================================
+ LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
+ Arquivo: Lista_Contatos_Musicos_v5.html  (dados em Lista_Contatos_Musicos_v5.json)
+================================================================
+
+v1 — 2026-10-06
+  - Primeira versão: página única com busca por nome, cidade ou
+    instrumento e botões de WhatsApp (wa.me) e Instagram.
+  - Ordem aleatória a cada abertura (Fisher-Yates com
+    crypto.getRandomValues) e botão "Embaralhar".
+  - 13 contatos importados de Contato_Acordeonistas.xlsx
+    (linhas vazias e "Teste" descartadas).
+  - Dados dentro do HTML, no bloco CONTATOS.
+  - Cidades padronizadas (ex.: "Alpinópolis mg" -> "Alpinópolis/MG").
+  - Página com noindex.
+----------------------------------------------------------------
+v2 — 2026-10-06
+  - Cada instrumento passou a ter seu próprio balão (acordeon e
+    teclado são instrumentos diferentes).
+  - Campo "instrumento" (texto) virou "instrumentos" (lista).
+  - Cor por instrumento: acordeon laranja, teclado azul,
+    violão verde, vocal rosa (com versão para tema escuro).
+  - A busca passou a considerar todos os instrumentos.
+----------------------------------------------------------------
+v3 — 2026-10-06
+  - Dados separados em Lista_Contatos_Musicos_v3.json (o "banco de dados"); o HTML
+    carrega o JSON com fetch (cache: no-store).
+  - Aviso na tela se o JSON não carregar (ex.: arquivo aberto
+    direto, fora do GitHub Pages).
+  - Funciona só pelo link do site; o arquivo local não lê o JSON.
+----------------------------------------------------------------
+v4 — 2026-10-06
+  - Nomes de arquivo passam a usar o nome do projeto + versão
+    (sem "index"): Lista_Contatos_Musicos_v4.html e Lista_Contatos_Musicos_v4.json.
+  - Versão visível no rodapé da página.
+  - Changelog incluído no arquivo (este bloco, após </html>).
+  - Dados e comportamento iguais aos da v3.
+  - Pendências: número do Eduardo Gregorio com 10 dígitos
+    (confirmar) e Instagram do Tin Fernandes (não informado).
+----------------------------------------------------------------
+v5 — 2026-10-06
+  - Ordenação por localização: ao abrir, a página pede a localização
+    do aparelho (navigator.geolocation) e ordena do contato mais
+    perto para o mais longe; quem está na mesma cidade fica em ordem
+    aleatória entre si (sorteio primeiro, ordenação estável depois).
+  - Se a pessoa negar, ou o aparelho não tiver localização: ordem
+    totalmente aleatória, como na v4.
+  - Novo botão "Perto de mim" / "Só aleatório" (liga e desliga);
+    "Embaralhar" sorteia de novo os empates.
+  - Cada card mostra a distância em linha reta (ex.: "≈ 42 km").
+  - JSON: novo campo coords, lista de [lat, lon] por contato (mais de
+    um par quando atende em mais de uma cidade, ex.: Rafael — vale a
+    menor distância).
+  - FAIXA_KM no script: 0 = empate só na mesma cidade; ex. 25 = quem
+    difere menos de 25 km fica embaralhado junto.
+  - A localização fica só na memória do aparelho: não é enviada nem
+    salva.
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
+    do Tin Fernandes (não informado).
+================================================================
+-->
