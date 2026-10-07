@@ -109,7 +109,26 @@
     border:1px solid var(--line); border-radius:999px; padding:5px 12px; min-height:30px;
   }
   .copiar:active{background:var(--accent-soft)}
-  .btn svg{width:18px; height:18px; fill:currentColor}
+  .btn svg{width:18px; height:18px; fill:currentColor; flex:none}
+  .btn{max-width:100%}
+  .btn span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .obs{
+    margin-top:10px; padding:8px 11px; background:var(--bg); border-left:3px solid var(--line); border-radius:6px;
+    color:var(--muted); font-size:.88rem; line-height:1.45; white-space:pre-line; overflow-wrap:anywhere;
+  }
+  .btn.so-icone{padding:10px 12px}
+  .fone .rotulo{flex-basis:100%; margin-bottom:-6px; color:var(--muted); font-size:.82rem}
+  .wpp-mini{
+    display:inline-flex; align-items:center; justify-content:center; flex:none; width:34px; height:34px;
+    border-radius:50%; background:var(--wpp); color:#fff;
+  }
+  .wpp-mini:active{background:var(--wpp-dark)}
+  .fone.com-wpp{gap:8px}
+  .fone.com-wpp .fone-num{font-size:.87rem}
+  .fone.com-wpp .copiar{padding:5px 9px; font-size:.78rem}
+  .fone.com-wpp .wpp-mini{width:30px; height:30px}
+  .fone.com-wpp .wpp-mini svg{width:16px; height:16px}
+  .wpp-mini svg{width:18px; height:18px; fill:currentColor}
   .empty{text-align:center; color:var(--muted); padding:40px 0}
   footer{margin-top:26px; text-align:center; color:var(--muted); font-size:.8rem; line-height:1.6}
   footer a{color:inherit}
@@ -150,6 +169,38 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-ig" gradientUnits="userSpaceOnUse" x1="2" y1="22" x2="22" y2="2">
+      <stop offset="0" stop-color="#feda75"/>
+      <stop offset=".28" stop-color="#fa7e1e"/>
+      <stop offset=".52" stop-color="#d62976"/>
+      <stop offset=".78" stop-color="#962fbf"/>
+      <stop offset="1" stop-color="#4f5bd5"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-ig" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="18" height="18" rx="5.2" fill="none" stroke="url(#g-ig)" stroke-width="2.1"/>
+    <circle cx="12" cy="12" r="4.1" fill="none" stroke="url(#g-ig)" stroke-width="2.1"/>
+    <circle cx="17.4" cy="6.6" r="1.3" fill="url(#g-ig)"/>
+  </symbol>
+  <symbol id="i-yt" viewBox="0 0 24 24">
+    <rect x="1.5" y="4.5" width="21" height="15" rx="4.6" fill="#ff0000"/>
+    <path d="M10 8.6v6.8l5.9-3.4z" fill="#fff"/>
+  </symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+      <path d="M3.5 7.5l8.5 6 8.5-6"/>
+    </g>
+  </symbol>
+  <symbol id="i-link" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </g>
+  </symbol>
+</svg>
 <div class="wrap">
   <header>
     <h1>🪗 Contatos de Acordeonistas</h1>
@@ -174,7 +225,7 @@
   <footer>
     A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.
     <div class="creditos">Criado por <strong>Saulo Henrique Fernandes</strong> · <a href="https://www.instagram.com/saulohenriquef" target="_blank" rel="noopener">@saulohenriquef</a></div>
-    Lista de Contatos de Músicos · v9
+    Lista de Contatos de Músicos · v10
   </footer>
 </div>
 
@@ -418,9 +469,13 @@ function nacional(num){
   return (d.startsWith("55") && d.length > 11) ? d.slice(2) : d;
 }
 
+const BOTOES_SO_ICONE = true;   // true = Instagram, YouTube e E-mail só com o símbolo (cabem mais por linha); false = símbolo + nome
+const MENSAGEM_WHATSAPP = "Olá, te encontrei pela lista Contato de Acordeonistas.";   // "" = abre a conversa sem texto
+
 function linkWhatsapp(num){
   const d = nacional(num);
-  return d ? "https://wa.me/55" + d : "";
+  if(!d) return "";
+  return "https://wa.me/55" + d + (MENSAGEM_WHATSAPP ? "?text=" + encodeURIComponent(MENSAGEM_WHATSAPP) : "");
 }
 
 function linkTel(num){
@@ -452,6 +507,121 @@ async function copiarTexto(t){
     ta.remove();
     return ok;
   }catch(e){ return false; }
+}
+
+/* ---------- campos opcionais: só aparecem quando o contato tem ---------- */
+const ehCelular = n => n.length === 11 && n[2] === "9";
+
+// aceita só endereços http(s); qualquer outro tipo (javascript:, data:...) é descartado
+function urlSegura(v){
+  v = String(v||"").trim();
+  if(!v || /\s/.test(v)) return "";
+  if(/^https?:\/\//i.test(v)) return v;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(v)) return "";
+  if(!/^[^\/]+\.[^\/]+/.test(v)) return "";
+  return "https://" + v;
+}
+
+function linkYoutube(v){
+  v = String(v||"").trim();
+  if(!v || /\s/.test(v)) return "";
+  if(/^https?:\/\//i.test(v)) return v;
+  if(/^(www\.|m\.)?youtube\.com\//i.test(v) || /^youtu\.be\//i.test(v)) return "https://" + v;
+  if(/^[a-z][a-z0-9+.\-]*:/i.test(v)) return "";
+  return "https://www.youtube.com/" + (v.startsWith("@") ? v : "@" + v);
+}
+
+function linkEmail(v){
+  v = String(v||"").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "mailto:" + v : "";
+}
+
+// "telefones": ["16999990000", {"numero": "...", "rotulo": "Recados", "whatsapp": false}]
+function listaTelefones(c){
+  return (Array.isArray(c.telefones) ? c.telefones : []).map(t => {
+    if(typeof t === "string") t = {numero: t};
+    if(!t || typeof t !== "object") return null;
+    const numero = nacional(t.numero);
+    if(!numero) return null;
+    return {
+      numero,
+      rotulo: String(t.rotulo||"").trim(),
+      wpp: typeof t.whatsapp === "boolean" ? t.whatsapp : ehCelular(numero)
+    };
+  }).filter(Boolean);
+}
+
+// "links": [{"rotulo": "Site", "url": "https://..."}]
+function listaLinks(c){
+  return (Array.isArray(c.links) ? c.links : []).map(l => {
+    if(typeof l === "string") l = {url: l};
+    if(!l || typeof l !== "object") return null;
+    const url = urlSegura(l.url);
+    if(!url) return null;
+    return {url, rotulo: String(l.rotulo||"").trim() || "Link"};
+  }).filter(Boolean);
+}
+
+function criarIcone(id){
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS(NS, "use");
+  use.setAttribute("href", "#" + id);
+  svg.appendChild(use);
+  return svg;
+}
+
+function botaoLink(href, rotulo, icone, soIcone){
+  const a = document.createElement("a");
+  a.className = "btn" + (soIcone ? " so-icone" : "");
+  a.href = href;
+  if(!/^mailto:/i.test(href)){ a.target = "_blank"; a.rel = "noopener"; }
+  a.appendChild(criarIcone(icone));
+  if(soIcone){
+    a.title = rotulo;
+    a.setAttribute("aria-label", rotulo);
+  }else{
+    const sp = document.createElement("span");
+    sp.textContent = rotulo;
+    a.appendChild(sp);
+  }
+  return a;
+}
+
+function linhaTelefone(c, t){
+  const tel = formatarTel(t.numero);
+  const linha = document.createElement("div");
+  linha.className = "fone";
+  if(t.rotulo){
+    const r = document.createElement("span");
+    r.className = "rotulo"; r.textContent = t.rotulo;
+    linha.appendChild(r);
+  }
+  const num = document.createElement("a");
+  num.className = "fone-num"; num.href = linkTel(t.numero);
+  num.textContent = "📞 " + tel;
+  num.setAttribute("aria-label", "Ligar para " + c.nome + (t.rotulo ? " (" + t.rotulo + ")" : "") + ": " + tel);
+  const cp = document.createElement("button");
+  cp.type = "button"; cp.className = "copiar"; cp.textContent = "Copiar";
+  cp.setAttribute("aria-label", "Copiar o número de " + c.nome + (t.rotulo ? " (" + t.rotulo + ")" : ""));
+  cp.addEventListener("click", async () => {
+    const ok = await copiarTexto(tel);
+    cp.textContent = ok ? "Copiado ✓" : "Não copiou";
+    clearTimeout(cp._t);
+    cp._t = setTimeout(() => { cp.textContent = "Copiar"; }, 1600);
+  });
+  linha.append(num, cp);
+  if(t.wpp){
+    linha.classList.add("com-wpp");
+    const w = document.createElement("a");
+    w.className = "wpp-mini"; w.href = linkWhatsapp(t.numero); w.target = "_blank"; w.rel = "noopener";
+    w.setAttribute("aria-label", "Chamar " + c.nome + " no WhatsApp: " + tel);
+    w.innerHTML = ICONE_WPP;
+    linha.appendChild(w);
+  }
+  return linha;
 }
 
 const ICONE_WPP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2a9.93 9.93 0 0 0-8.5 15.07L2 22l5.07-1.5A9.93 9.93 0 1 0 12.04 2Zm5.8 14.1c-.25.7-1.45 1.33-2 1.4-.52.07-1.17.1-1.9-.12a17 17 0 0 1-1.72-.64c-3.03-1.31-5-4.37-5.15-4.57-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.6-.38.8-.38l.58.01c.19.01.43-.07.67.5.25.6.85 2.07.92 2.22.08.15.13.33.03.52-.1.2-.15.32-.3.5-.15.17-.32.38-.45.51-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.13 1 2.09 1.32 2.39 1.47.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.35.08.12.08.72-.17 1.42Z"/></svg>';
@@ -516,35 +686,24 @@ function render(){
       acoes.appendChild(a);
     }
     const ig = linkInstagram(c.instagram);
-    if(ig){
-      const a = document.createElement("a");
-      a.className = "btn"; a.href = ig; a.target = "_blank"; a.rel = "noopener";
-      a.textContent = "Instagram";
-      acoes.appendChild(a);
-    }
+    if(ig) acoes.appendChild(botaoLink(ig, "Instagram de " + c.nome, "i-ig", BOTOES_SO_ICONE));
+    const yt = linkYoutube(c.youtube);
+    if(yt) acoes.appendChild(botaoLink(yt, "YouTube de " + c.nome, "i-yt", BOTOES_SO_ICONE));
+    const em = linkEmail(c.email);
+    if(em) acoes.appendChild(botaoLink(em, "E-mail de " + c.nome, "i-mail", BOTOES_SO_ICONE));
+    listaLinks(c).forEach(l => acoes.appendChild(botaoLink(l.url, l.rotulo, "i-link")));
 
     corpo.append(nome, local, tags);
 
-    const tel = formatarTel(c.whatsapp);
-    if(tel){
-      const linha = document.createElement("div");
-      linha.className = "fone";
-      const num = document.createElement("a");
-      num.className = "fone-num"; num.href = linkTel(c.whatsapp);
-      num.textContent = "📞 " + tel;
-      num.setAttribute("aria-label", "Ligar para " + c.nome + ": " + tel);
-      const cp = document.createElement("button");
-      cp.type = "button"; cp.className = "copiar"; cp.textContent = "Copiar";
-      cp.setAttribute("aria-label", "Copiar o número de " + c.nome);
-      cp.addEventListener("click", async () => {
-        const ok = await copiarTexto(tel);
-        cp.textContent = ok ? "Copiado ✓" : "Não copiou";
-        clearTimeout(cp._t);
-        cp._t = setTimeout(() => { cp.textContent = "Copiar"; }, 1600);
-      });
-      linha.append(num, cp);
-      corpo.append(linha);
+    const obs = String(c.observacoes || "").trim();
+    if(obs){
+      const o = document.createElement("div");
+      o.className = "obs"; o.textContent = obs;
+      corpo.append(o);
     }
+
+    if(formatarTel(c.whatsapp)) corpo.append(linhaTelefone(c, {numero: nacional(c.whatsapp), rotulo: "", wpp: false}));
+    listaTelefones(c).forEach(t => corpo.append(linhaTelefone(c, t)));
 
     if(acoes.children.length) corpo.append(acoes);
     li.append(av, corpo);
@@ -607,9 +766,9 @@ iniciar();
 <!--
 ================================================================
  LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
- Arquivo: Lista_Contatos_Musicos_v9.html
- Dados:   iguais aos da v8 (Lista_Contatos_Musicos_v8_contatos.json e
-          Lista_Contatos_Musicos_v8_cidades.json); nada a trocar no GitHub
+ Arquivo: Lista_Contatos_Musicos_v10.html
+ Dados:   Lista_Contatos_Musicos_v10_contatos.json (cidades iguais às da v8)
+          (no GitHub, colar o conteúdo em Lista_Contatos_Musicos_contatos.json)
           (no GitHub, colar o conteúdo em Lista_Contatos_Musicos_contatos.json
           e Lista_Contatos_Musicos_cidades.json, que são os arquivos que o HTML lê)
 ================================================================
@@ -750,6 +909,43 @@ v9 — 2026-10-07
   - A foto é exibida em até 380 px. As fotos do painel têm 256 px, então
     ficam levemente ampliadas; uma saída maior no painel deixa nítida.
   - Dados e comportamento do resto iguais aos da v8.
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    Instagram do Tin Fernandes (não informado); confirmar o nome nos
+    créditos; contato sem cidade mostra um pino vazio; contato sem o
+    campo "instrumentos" derruba a lista (o painel sempre preenche).
+----------------------------------------------------------------
+v10 — 2026-10-07
+  - Botão do Instagram com o símbolo do Instagram; novo botão do
+    YouTube ("youtube": "@canal" ou link do canal) com o símbolo do
+    YouTube.
+  - Novos campos opcionais, que só aparecem no cartão de quem os tem
+    (os demais cartões ficam exatamente como estavam):
+      "observacoes": texto livre, mostrado em um recado abaixo dos
+        instrumentos (respeita quebras de linha);
+      "email": botão "E-mail" (abre o aplicativo de e-mail);
+      "telefones": outros números (texto, ou objeto com "rotulo" e,
+        se quiser, "whatsapp": false); cada um aparece com número
+        para ligar e botão Copiar, e os celulares ganham um botão
+        verde do WhatsApp;
+      "links": outros links, cada um com "rotulo" e "url", como
+        botão com ícone de link.
+  - WhatsApp abre a conversa já com a mensagem "Olá, te encontrei
+    pela lista Contato de Acordeonistas." (constante
+    MENSAGEM_WHATSAPP no script; vazia = sem texto). A pessoa ainda
+    precisa tocar em enviar.
+  - Segurança: links e YouTube só aceitam http(s); outros tipos
+    (javascript:, data:...) são ignorados; e-mail inválido é
+    ignorado; todo texto é exibido como texto, nunca como HTML.
+  - Instagram, YouTube e E-mail aparecem só com o símbolo (botão
+    quadrado, com nome acessível e dica ao passar o mouse), para
+    caber mais botões por linha no celular; BOTOES_SO_ICONE = false
+    mostra símbolo + nome. Links livres sempre mostram o rótulo.
+  - Botões com texto longo são cortados com reticências.
+  - Rótulo do telefone (ex.: Recados) fica numa linha acima do número.
+  - Dados: o Fulano (teste) ganhou valores de exemplo em todos os
+    campos novos (telefones fictícios 11 90000-000x, e-mail
+    exemplo.com) para mostrar o resultado; remover junto com o
+    contato.
   - Pendências: coordenadas aproximadas (centro de cada cidade);
     Instagram do Tin Fernandes (não informado); confirmar o nome nos
     créditos; contato sem cidade mostra um pino vazio; contato sem o
