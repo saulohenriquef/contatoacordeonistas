@@ -1,9 +1,9 @@
 [
   {
     "nome": "Saulo Henrique Fernandes",
+    "foto": "saulo-henrique-fernandes.jpg",
     "cidades": ["Passos/MG"],
     "instrumentos": ["Acordeon", "Teclado"],
-    "foto": "saulo-henrique-fernandes.jpg",
     "instagram": "saulohenriquef",
     "whatsapp": "35988089192"
   },
@@ -23,6 +23,7 @@
   },
   {
     "nome": "Eduardo Gregorio",
+    "foto": "eduardo-gregorio.jpg",
     "cidades": ["Franca/SP"],
     "instrumentos": ["Acordeon"],
     "instagram": "gregorio.eduu",
@@ -86,6 +87,7 @@
   },
   {
     "nome": "Matheus Faria Gaiteiro",
+    "foto": "matheus-faria-gaiteiro.jpg",
     "cidades": ["Alpinópolis/MG"],
     "instrumentos": ["Acordeon"],
     "instagram": "matheus.gaiteiro",
