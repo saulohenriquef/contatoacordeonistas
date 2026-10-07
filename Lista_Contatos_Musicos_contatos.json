@@ -25,7 +25,7 @@
     "cidades": ["Franca/SP"],
     "instrumentos": ["Acordeon"],
     "instagram": "gregorio.eduu",
-    "whatsapp": "1699425076"
+    "whatsapp": "16994250769"
   },
   {
     "nome": "Willer",
@@ -92,6 +92,7 @@
   },
   {
     "nome": "Fulano (teste)",
+    "foto": "fulano.jpg",
     "cidades": ["Ribeirão Preto/SP"],
     "instrumentos": ["Sanfona"],
     "selos": ["IFC"],
