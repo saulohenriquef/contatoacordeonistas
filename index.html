@@ -54,6 +54,27 @@
   .avatar.colorido{background:hsl(var(--h) 55% 90%); color:hsl(var(--h) 55% 30%)}
   .avatar img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .25s}
   .avatar img.ok{opacity:1}
+  .avatar.com-foto{cursor:zoom-in; -webkit-tap-highlight-color:transparent}
+  .avatar.com-foto:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .avatar.com-foto:active{transform:scale(.96)}
+
+  /* foto ampliada (ao tocar no avatar) */
+  .foto-zoom{
+    position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; padding:20px; background:rgba(0,0,0,.9); cursor:zoom-out; animation:aparecer .18s ease-out;
+  }
+  .foto-zoom[hidden]{display:none}
+  .foto-zoom img{
+    width:min(86vw, 380px); aspect-ratio:1/1; object-fit:contain; border-radius:16px; background:#111;
+    box-shadow:0 12px 40px rgba(0,0,0,.5);
+  }
+  .foto-zoom .legenda{color:#fff; font-weight:650; font-size:1.05rem; text-align:center; overflow-wrap:anywhere}
+  .foto-fechar{
+    position:absolute; top:calc(env(safe-area-inset-top,0px) + 12px); right:14px; width:44px; height:44px;
+    border-radius:50%; border:0; background:rgba(255,255,255,.16); color:#fff; font-size:1.2rem; cursor:pointer;
+  }
+  @keyframes aparecer{from{opacity:0} to{opacity:1}}
+  @media (prefers-reduced-motion: reduce){ .foto-zoom{animation:none} }
   .name{font-weight:650; font-size:1.05rem; line-height:1.25; overflow-wrap:anywhere}
   .line{color:var(--muted); font-size:.88rem; margin-top:3px}
   .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
@@ -153,7 +174,7 @@
   <footer>
     A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.
     <div class="creditos">Criado por <strong>Saulo Henrique Fernandes</strong> · <a href="https://www.instagram.com/saulohenriquef" target="_blank" rel="noopener">@saulohenriquef</a></div>
-    Lista de Contatos de Músicos · v8
+    Lista de Contatos de Músicos · v9
   </footer>
 </div>
 
@@ -161,6 +182,12 @@
   <div id="balao-titulo" class="balao-titulo"></div>
   <div id="balao-texto"></div>
   <span class="balao-seta"></span>
+</div>
+
+<div id="foto-zoom" class="foto-zoom" role="dialog" aria-modal="true" aria-label="Foto ampliada" hidden>
+  <button id="foto-fechar" class="foto-fechar" type="button" aria-label="Fechar">✕</button>
+  <img id="foto-img" alt="">
+  <div id="foto-legenda" class="legenda"></div>
 </div>
 
 <script>
@@ -289,7 +316,7 @@ function alternarBalao(btn, selo){
 document.addEventListener("click", e => {
   if(!e.target.closest(".selo") && !e.target.closest(".balao")) fecharBalao();
 });
-document.addEventListener("keydown", e => { if(e.key === "Escape") fecharBalao(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape"){ fecharBalao(); fecharFoto(); } });
 let larguraAnterior = window.innerWidth;
 window.addEventListener("resize", () => {   // só fecha ao girar/redimensionar (a barra do navegador também dispara resize no celular)
   if(window.innerWidth !== larguraAnterior){ larguraAnterior = window.innerWidth; fecharBalao(); }
@@ -334,13 +361,49 @@ function criarAvatar(c){
   if(src){
     const img = document.createElement("img");
     img.alt = ""; img.loading = "lazy"; img.decoding = "async";
-    img.addEventListener("load", () => img.classList.add("ok"));
+    img.addEventListener("load", () => { img.classList.add("ok"); tornarClicavel(av, c, src); });
     img.addEventListener("error", () => img.remove());   // sem arquivo: ficam as iniciais
     img.src = src;
     av.appendChild(img);
   }
   return av;
 }
+
+let avatarAberto = null;   // avatar que abriu a foto (o foco volta para ele ao fechar)
+
+function abrirFoto(av, c, src){
+  fecharBalao();
+  $("foto-img").src = src;
+  $("foto-img").alt = "Foto de " + c.nome;
+  $("foto-legenda").textContent = c.nome;
+  $("foto-zoom").hidden = false;
+  document.body.style.overflow = "hidden";
+  avatarAberto = av;
+  $("foto-fechar").focus({preventScroll:true});
+}
+
+function fecharFoto(){
+  if($("foto-zoom").hidden) return;
+  $("foto-zoom").hidden = true;
+  $("foto-img").removeAttribute("src");
+  document.body.style.overflow = "";
+  if(avatarAberto){ avatarAberto.focus({preventScroll:true}); avatarAberto = null; }
+}
+
+// só o avatar que de fato carregou a foto vira clicável
+function tornarClicavel(av, c, src){
+  av.classList.add("com-foto");
+  av.removeAttribute("aria-hidden");
+  av.setAttribute("role", "button");
+  av.setAttribute("aria-label", "Ver a foto de " + c.nome);
+  av.tabIndex = 0;
+  av.addEventListener("click", () => abrirFoto(av, c, src));
+  av.addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); abrirFoto(av, c, src); }
+  });
+}
+
+$("foto-zoom").addEventListener("click", fecharFoto);   // toque em qualquer lugar (inclusive no ✕) fecha
 
 function linkInstagram(v){
   if(!v) return "";
@@ -544,8 +607,9 @@ iniciar();
 <!--
 ================================================================
  LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
- Arquivo: Lista_Contatos_Musicos_v8.html
- Dados:   Lista_Contatos_Musicos_v8_contatos.json e Lista_Contatos_Musicos_v8_cidades.json
+ Arquivo: Lista_Contatos_Musicos_v9.html
+ Dados:   iguais aos da v8 (Lista_Contatos_Musicos_v8_contatos.json e
+          Lista_Contatos_Musicos_v8_cidades.json); nada a trocar no GitHub
           (no GitHub, colar o conteúdo em Lista_Contatos_Musicos_contatos.json
           e Lista_Contatos_Musicos_cidades.json, que são os arquivos que o HTML lê)
 ================================================================
@@ -674,5 +738,21 @@ v8 — 2026-10-06
   - Pendências: coordenadas aproximadas (centro de cada cidade);
     Instagram do Tin Fernandes (não informado); confirmar o nome nos
     créditos.
+----------------------------------------------------------------
+v9 — 2026-10-07
+  - Ao tocar no avatar de quem tem foto, a foto abre ampliada numa
+    janela sobre a lista, com o nome embaixo. Fecha tocando em
+    qualquer lugar, no ✕ ou com Esc; o rolar da página fica travado
+    enquanto está aberta e o foco volta para o avatar.
+  - Só fica clicável o avatar cuja foto carregou de verdade (quem
+    está só com as iniciais continua como antes). Acessível pelo
+    teclado (Tab, Enter ou espaço) e anunciado como botão.
+  - A foto é exibida em até 380 px. As fotos do painel têm 256 px, então
+    ficam levemente ampliadas; uma saída maior no painel deixa nítida.
+  - Dados e comportamento do resto iguais aos da v8.
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    Instagram do Tin Fernandes (não informado); confirmar o nome nos
+    créditos; contato sem cidade mostra um pino vazio; contato sem o
+    campo "instrumentos" derruba a lista (o painel sempre preenche).
 ================================================================
 -->
