@@ -47,9 +47,13 @@
     padding:14px; display:grid; grid-template-columns:48px 1fr; gap:12px; align-items:start;
   }
   .avatar{
+    position:relative; overflow:hidden;
     width:48px; height:48px; border-radius:50%; background:var(--accent-soft); color:var(--accent);
     display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.05rem;
   }
+  .avatar.colorido{background:hsl(var(--h) 55% 90%); color:hsl(var(--h) 55% 30%)}
+  .avatar img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .25s}
+  .avatar img.ok{opacity:1}
   .name{font-weight:650; font-size:1.05rem; line-height:1.25; overflow-wrap:anywhere}
   .line{color:var(--muted); font-size:.88rem; margin-top:3px}
   .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
@@ -74,6 +78,16 @@
   }
   .btn.wpp{background:var(--wpp); border-color:var(--wpp); color:#fff}
   .btn.wpp:active{background:var(--wpp-dark)}
+  .fone{display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:10px}
+  .fone-num{
+    color:var(--text); font-weight:600; font-size:.97rem; font-variant-numeric:tabular-nums;
+    text-decoration:underline; text-decoration-style:dotted; text-underline-offset:4px;
+  }
+  .copiar{
+    font:inherit; font-size:.8rem; color:var(--muted); background:transparent; cursor:pointer;
+    border:1px solid var(--line); border-radius:999px; padding:5px 12px; min-height:30px;
+  }
+  .copiar:active{background:var(--accent-soft)}
   .btn svg{width:18px; height:18px; fill:currentColor}
   .empty{text-align:center; color:var(--muted); padding:40px 0}
   footer{margin-top:26px; text-align:center; color:var(--muted); font-size:.8rem; line-height:1.6}
@@ -107,6 +121,7 @@
   @media (prefers-color-scheme: dark){
     .selo{background:#3a2f10; color:#f0c860; border-color:#6b5420}
     .selo[aria-expanded="true"]{background:#4a3c14}
+    .avatar.colorido{background:hsl(var(--h) 28% 20%); color:hsl(var(--h) 60% 74%)}
     .balao{border-color:#6b5420}
     .balao-titulo{color:#f0c860}
     .balao-seta{border-color:#6b5420}
@@ -117,7 +132,7 @@
 <div class="wrap">
   <header>
     <h1>🪗 Contatos de Acordeonistas</h1>
-    <p class="sub">Toque em WhatsApp para chamar direto.</p>
+    <p class="sub">Chame pelo WhatsApp ou toque no número para ligar.</p>
   </header>
 
   <div class="tools">
@@ -138,7 +153,7 @@
   <footer>
     A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.
     <div class="creditos">Criado por <strong>Saulo Henrique Fernandes</strong> · <a href="https://www.instagram.com/saulohenriquef" target="_blank" rel="noopener">@saulohenriquef</a></div>
-    Lista de Contatos de Músicos · v7
+    Lista de Contatos de Músicos · v8
   </footer>
 </div>
 
@@ -287,6 +302,46 @@ function iniciais(nome){
   return (letra(p[0]||"") + (p.length>1 ? letra(p[p.length-1]) : "")).toUpperCase() || "?";
 }
 
+/* ---------- avatares ----------
+   Para pôr foto, coloque no contato "foto": "nome-do-arquivo.jpg" (o arquivo fica na pasta PASTA_FOTOS
+   do repositório). Sem foto, ou se o arquivo não for encontrado, aparece o círculo com as iniciais. */
+const PASTA_FOTOS = "fotos/";   // pasta das fotos no repositório, com a barra no fim
+const COR_POR_NOME = true;      // true = cada pessoa tem uma cor própria nas iniciais; false = todas laranja
+
+function matiz(nome){           // o mesmo nome sempre dá a mesma cor
+  let h = 0;
+  for(const ch of norm(nome)) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return h % 360;
+}
+
+function urlFoto(foto){
+  if(!foto) return "";
+  foto = String(foto).trim();
+  if(!foto) return "";
+  return /^https?:\/\//i.test(foto) ? foto : PASTA_FOTOS + encodeURI(foto);
+}
+
+function criarAvatar(c){
+  const av = document.createElement("div");
+  av.className = "avatar";
+  av.setAttribute("aria-hidden", "true");   // decorativo: o nome já está ao lado
+  av.textContent = iniciais(c.nome);
+  if(COR_POR_NOME){
+    av.classList.add("colorido");
+    av.style.setProperty("--h", matiz(c.nome));
+  }
+  const src = urlFoto(c.foto);
+  if(src){
+    const img = document.createElement("img");
+    img.alt = ""; img.loading = "lazy"; img.decoding = "async";
+    img.addEventListener("load", () => img.classList.add("ok"));
+    img.addEventListener("error", () => img.remove());   // sem arquivo: ficam as iniciais
+    img.src = src;
+    av.appendChild(img);
+  }
+  return av;
+}
+
 function linkInstagram(v){
   if(!v) return "";
   v = v.trim();
@@ -294,17 +349,46 @@ function linkInstagram(v){
   return "https://www.instagram.com/" + v.replace(/^@/,"");
 }
 
+// número só com dígitos e sem o 55 do Brasil
+function nacional(num){
+  const d = String(num||"").replace(/\D/g,"");
+  return (d.startsWith("55") && d.length > 11) ? d.slice(2) : d;
+}
+
 function linkWhatsapp(num){
-  const d = (num||"").replace(/\D/g,"");
-  if(!d) return "";
-  return "https://wa.me/" + (d.startsWith("55") && d.length>11 ? d : "55"+d);
+  const d = nacional(num);
+  return d ? "https://wa.me/55" + d : "";
+}
+
+function linkTel(num){
+  const d = nacional(num);
+  return d ? "tel:+55" + d : "";
 }
 
 function formatarTel(num){
-  const d = (num||"").replace(/\D/g,"");
+  const d = nacional(num);
   if(d.length===11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
   if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return d;
+}
+
+async function copiarTexto(t){
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(t);
+      return true;
+    }
+  }catch(e){ /* tenta o método antigo abaixo */ }
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, t.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  }catch(e){ return false; }
 }
 
 const ICONE_WPP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2a9.93 9.93 0 0 0-8.5 15.07L2 22l5.07-1.5A9.93 9.93 0 1 0 12.04 2Zm5.8 14.1c-.25.7-1.45 1.33-2 1.4-.52.07-1.17.1-1.9-.12a17 17 0 0 1-1.72-.64c-3.03-1.31-5-4.37-5.15-4.57-.15-.2-1.23-1.64-1.23-3.13 0-1.49.78-2.22 1.06-2.52.28-.3.6-.38.8-.38l.58.01c.19.01.43-.07.67.5.25.6.85 2.07.92 2.22.08.15.13.33.03.52-.1.2-.15.32-.3.5-.15.17-.32.38-.45.51-.15.15-.3.31-.13.6.17.3.77 1.27 1.65 2.06 1.13 1 2.09 1.32 2.39 1.47.3.15.47.12.65-.07.17-.2.75-.87.95-1.17.2-.3.4-.25.67-.15.28.1 1.76.83 2.06.98.3.15.5.22.57.35.08.12.08.72-.17 1.42Z"/></svg>';
@@ -326,8 +410,7 @@ function render(){
     const li = document.createElement("li");
     li.className = "card";
 
-    const av = document.createElement("div");
-    av.className = "avatar"; av.textContent = iniciais(c.nome);
+    const av = criarAvatar(c);
 
     const corpo = document.createElement("div");
 
@@ -378,6 +461,28 @@ function render(){
     }
 
     corpo.append(nome, local, tags);
+
+    const tel = formatarTel(c.whatsapp);
+    if(tel){
+      const linha = document.createElement("div");
+      linha.className = "fone";
+      const num = document.createElement("a");
+      num.className = "fone-num"; num.href = linkTel(c.whatsapp);
+      num.textContent = "📞 " + tel;
+      num.setAttribute("aria-label", "Ligar para " + c.nome + ": " + tel);
+      const cp = document.createElement("button");
+      cp.type = "button"; cp.className = "copiar"; cp.textContent = "Copiar";
+      cp.setAttribute("aria-label", "Copiar o número de " + c.nome);
+      cp.addEventListener("click", async () => {
+        const ok = await copiarTexto(tel);
+        cp.textContent = ok ? "Copiado ✓" : "Não copiou";
+        clearTimeout(cp._t);
+        cp._t = setTimeout(() => { cp.textContent = "Copiar"; }, 1600);
+      });
+      linha.append(num, cp);
+      corpo.append(linha);
+    }
+
     if(acoes.children.length) corpo.append(acoes);
     li.append(av, corpo);
     lista.appendChild(li);
@@ -439,7 +544,10 @@ iniciar();
 <!--
 ================================================================
  LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
- Arquivo: Lista_Contatos_Musicos_v7.html  (dados em Lista_Contatos_Musicos_contatos.json e Lista_Contatos_Musicos_cidades.json)
+ Arquivo: Lista_Contatos_Musicos_v8.html
+ Dados:   Lista_Contatos_Musicos_v8_contatos.json e Lista_Contatos_Musicos_v8_cidades.json
+          (no GitHub, colar o conteúdo em Lista_Contatos_Musicos_contatos.json
+          e Lista_Contatos_Musicos_cidades.json, que são os arquivos que o HTML lê)
 ================================================================
 
 v1 — 2026-10-06
@@ -541,5 +649,30 @@ v7 — 2026-10-06
   - Pendências: coordenadas aproximadas (centro de cada cidade);
     número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
     do Tin Fernandes (não informado); confirmar o nome nos créditos.
+----------------------------------------------------------------
+v8 — 2026-10-06
+  - Avatares: se o contato tiver "foto" (ex.: "foto": "fulano.jpg"),
+    a foto aparece no círculo; o arquivo fica na pasta fotos/ do
+    repositório (constante PASTA_FOTOS no script). Sem foto, ou com
+    arquivo não encontrado, aparecem as iniciais (reserva automática).
+  - O círculo de iniciais ganhou cor própria por pessoa, calculada a
+    partir do nome (COR_POR_NOME = false volta ao laranja único).
+  - Ferramenta separada para preparar as fotos: Preparador_Fotos_
+    Contatos_v1.html (enquadra em círculo, gera JPEG 256x256 leve e já
+    sugere o nome do arquivo e a linha "foto" para o JSON).
+  - Telefone visível no card: número formatado (toque para ligar) e
+    botão "Copiar". Usa o mesmo campo "whatsapp" do contato; o botão
+    de WhatsApp continua igual.
+  - Número do Eduardo Gregorio corrigido (faltava o último dígito):
+    16994250769.
+  - Bancos de dados com a versão só no nome do arquivo (Lista_Contatos_Musicos_v8_
+    contatos.json e Lista_Contatos_Musicos_v8_cidades.json). As cidades não mudaram
+    desde a v7.
+  - Fulano (teste) ganhou foto de exemplo (fotos/fulano.jpg);
+    remover junto com o contato.
+  - Texto abaixo do título atualizado.
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    Instagram do Tin Fernandes (não informado); confirmar o nome nos
+    créditos.
 ================================================================
 -->
