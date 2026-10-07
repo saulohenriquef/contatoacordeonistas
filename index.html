@@ -76,7 +76,41 @@
   .btn.wpp:active{background:var(--wpp-dark)}
   .btn svg{width:18px; height:18px; fill:currentColor}
   .empty{text-align:center; color:var(--muted); padding:40px 0}
-  footer{margin-top:26px; text-align:center; color:var(--muted); font-size:.8rem}
+  footer{margin-top:26px; text-align:center; color:var(--muted); font-size:.8rem; line-height:1.6}
+  footer a{color:inherit}
+  footer .creditos{margin-top:6px}
+
+  /* selos (ex.: IFC) e balão explicativo */
+  .selo{
+    display:inline-flex; align-items:center; vertical-align:middle; margin-left:6px; min-height:24px;
+    background:#fdf0c8; color:#7a5500; border:1px solid #e3c36b; border-radius:999px;
+    padding:2px 9px; font:inherit; font-size:.72rem; font-weight:800; letter-spacing:.04em; cursor:pointer;
+  }
+  .selo::after{
+    content:"i"; display:inline-flex; align-items:center; justify-content:center;
+    width:14px; height:14px; margin-left:5px; border:1.5px solid currentColor; border-radius:50%;
+    font:italic 700 .64rem Georgia,serif; letter-spacing:0;
+  }
+  .selo[aria-expanded="true"]{background:#f5dc92}
+  .balao{
+    position:absolute; z-index:20; background:var(--card); color:var(--text);
+    border:1px solid #d6a62b; border-radius:12px; padding:12px 14px 13px;
+    box-shadow:0 8px 28px rgba(0,0,0,.25); font-size:.88rem; line-height:1.45; font-weight:400;
+  }
+  .balao[hidden]{display:none}
+  .balao-titulo{font-weight:700; margin-bottom:5px; color:#9a6c00}
+  .balao-seta{
+    position:absolute; left:var(--seta,50%); top:-7px; width:12px; height:12px; background:var(--card);
+    border:1px solid #d6a62b; border-right:0; border-bottom:0; transform:translateX(-50%) rotate(45deg);
+  }
+  .balao.acima .balao-seta{top:auto; bottom:-7px; transform:translateX(-50%) rotate(225deg)}
+  @media (prefers-color-scheme: dark){
+    .selo{background:#3a2f10; color:#f0c860; border-color:#6b5420}
+    .selo[aria-expanded="true"]{background:#4a3c14}
+    .balao{border-color:#6b5420}
+    .balao-titulo{color:#f0c860}
+    .balao-seta{border-color:#6b5420}
+  }
 </style>
 </head>
 <body>
@@ -101,11 +135,21 @@
   <ul id="lista"></ul>
   <p id="vazio" class="empty" hidden>Nenhum contato encontrado.</p>
 
-  <footer>A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.<br>Lista de Contatos de Músicos · v6</footer>
+  <footer>
+    A ordem muda toda vez que a página é aberta. Se você liberar a localização, os mais próximos aparecem primeiro; ela fica só no seu aparelho.
+    <div class="creditos">Criado por <strong>Saulo Henrique Fernandes</strong> · <a href="https://www.instagram.com/saulohenriquef" target="_blank" rel="noopener">@saulohenriquef</a></div>
+    Lista de Contatos de Músicos · v7
+  </footer>
+</div>
+
+<div id="balao" class="balao" role="dialog" aria-live="polite" hidden>
+  <div id="balao-titulo" class="balao-titulo"></div>
+  <div id="balao-texto"></div>
+  <span class="balao-seta"></span>
 </div>
 
 <script>
-let CONTATOS = [];   // carregado de Lista_Contatos_Musicos_v6_contatos.json (cada contato ganha coords a partir de Lista_Contatos_Musicos_v6_cidades.json)
+let CONTATOS = [];   // carregado de Lista_Contatos_Musicos_contatos.json (cada contato ganha coords a partir de Lista_Contatos_Musicos_cidades.json)
 
 
 /* ---------- utilitários ---------- */
@@ -179,9 +223,68 @@ function pedirLocalizacao(){
   }, {enableHighAccuracy:false, timeout:10000, maximumAge:600000});
 }
 
+/* ---------- selos ----------
+   Para dar um selo a um contato, coloque o código dele em "selos" no arquivo de contatos
+   (ex.: "selos": ["IFC"]). Para criar um selo novo, acrescente uma entrada aqui. */
+const SELOS = {
+  IFC: {
+    sigla: "IFC",
+    nome: "Integrante Fixo de Conjunto",
+    texto: "Este músico é integrante fixo de um conjunto (banda, grupo ou dupla). A agenda dele é a do conjunto, por isso ele dificilmente aceita free-lances. Dá para convidar, mas combine com bastante antecedência e esteja aberto a receber um \"não\"."
+  }
+};
+
+let balaoDe = null;   // botão do selo que está com o balão aberto
+
+function fecharBalao(){
+  $("balao").hidden = true;
+  if(balaoDe){ balaoDe.setAttribute("aria-expanded", "false"); balaoDe = null; }
+}
+
+function alternarBalao(btn, selo){
+  if(balaoDe === btn){ fecharBalao(); return; }
+  fecharBalao();
+  const bal = $("balao");
+  $("balao-titulo").textContent = selo.sigla + " · " + selo.nome;
+  $("balao-texto").textContent = selo.texto;
+
+  const largura = Math.min(290, window.innerWidth - 16);
+  bal.style.width = largura + "px";
+  bal.style.visibility = "hidden";
+  bal.hidden = false;
+
+  const r = btn.getBoundingClientRect();
+  const alto = bal.offsetHeight;
+  const centro = r.left + r.width/2;
+  const esq = Math.max(8, Math.min(centro - largura/2, window.innerWidth - largura - 8));
+  const cabeAbaixo = r.bottom + alto + 14 <= window.innerHeight;
+  const cabeAcima = r.top - alto - 14 >= 0;
+  const abaixo = cabeAbaixo || !cabeAcima;
+
+  bal.classList.toggle("acima", !abaixo);
+  bal.style.left = (esq + window.scrollX) + "px";
+  bal.style.top = ((abaixo ? r.bottom + 10 : r.top - alto - 10) + window.scrollY) + "px";
+  bal.style.setProperty("--seta", Math.max(16, Math.min(centro - esq, largura - 16)) + "px");
+  bal.style.visibility = "visible";
+
+  btn.setAttribute("aria-expanded", "true");
+  balaoDe = btn;
+}
+
+document.addEventListener("click", e => {
+  if(!e.target.closest(".selo") && !e.target.closest(".balao")) fecharBalao();
+});
+document.addEventListener("keydown", e => { if(e.key === "Escape") fecharBalao(); });
+let larguraAnterior = window.innerWidth;
+window.addEventListener("resize", () => {   // só fecha ao girar/redimensionar (a barra do navegador também dispara resize no celular)
+  if(window.innerWidth !== larguraAnterior){ larguraAnterior = window.innerWidth; fecharBalao(); }
+});
+
 function iniciais(nome){
-  const p = nome.trim().split(/\s+/);
-  return (p[0][0] + (p.length>1 ? p[p.length-1][0] : "")).toUpperCase();
+  // ignora texto entre parênteses, como "(teste)", e pega só letras
+  const p = nome.replace(/\(.*?\)/g, "").trim().split(/\s+/).filter(Boolean);
+  const letra = w => (w.match(/\p{L}/u) || [""])[0];
+  return (letra(p[0]||"") + (p.length>1 ? letra(p[p.length-1]) : "")).toUpperCase() || "?";
 }
 
 function linkInstagram(v){
@@ -212,10 +315,11 @@ let ordem = [];
 function render(){
   const q = norm($("busca").value.trim());
   const lista = $("lista");
+  fecharBalao();
   lista.textContent = "";
 
   const visiveis = ordem.filter(c =>
-    !q || norm(c.nome+" "+(c.cidades||[]).join(" ")+" "+c.instrumentos.join(" ")).includes(q)
+    !q || norm(c.nome+" "+(c.cidades||[]).join(" ")+" "+c.instrumentos.join(" ")+" "+(c.selos||[]).map(id => id+" "+(SELOS[id] ? SELOS[id].nome : "")).join(" ")).includes(q)
   );
 
   visiveis.forEach(c => {
@@ -229,6 +333,16 @@ function render(){
 
     const nome = document.createElement("div");
     nome.className = "name"; nome.textContent = c.nome;
+    (c.selos||[]).forEach(id => {
+      const selo = SELOS[id];
+      if(!selo) return;
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "selo"; b.textContent = selo.sigla;
+      b.setAttribute("aria-expanded", "false");
+      b.setAttribute("aria-label", selo.sigla + ": " + selo.nome + ". Toque para saber mais.");
+      b.addEventListener("click", () => alternarBalao(b, selo));
+      nome.appendChild(b);
+    });
 
     const local = document.createElement("div");
     local.className = "line";
@@ -263,7 +377,8 @@ function render(){
       acoes.appendChild(a);
     }
 
-    corpo.append(nome, local, tags, acoes);
+    corpo.append(nome, local, tags);
+    if(acoes.children.length) corpo.append(acoes);
     li.append(av, corpo);
     lista.appendChild(li);
   });
@@ -293,8 +408,8 @@ async function carregarJSON(arquivo){
 async function iniciar(){
   try{
     const [contatos, cidades] = await Promise.all([
-      carregarJSON("Lista_Contatos_Musicos_v6_contatos.json"),
-      carregarJSON("Lista_Contatos_Musicos_v6_cidades.json")
+      carregarJSON("Lista_Contatos_Musicos_contatos.json"),
+      carregarJSON("Lista_Contatos_Musicos_cidades.json")
     ]);
     // nome da cidade -> [lat, lon]; ignora maiúsculas, acentos e espaços nas pontas
     const mapa = new Map(Object.entries(cidades).map(([n, v]) => [norm(n.trim()), [v.lat, v.lon]]));
@@ -305,7 +420,7 @@ async function iniciar(){
       coords: (Array.isArray(c.cidades) ? c.cidades : []).map(n => mapa.get(chave(n))).filter(Boolean)
     }));
     const faltam = [...new Set(contatos.flatMap(c => (c.cidades||[]).filter(n => !mapa.has(chave(n)))))];
-    if(faltam.length) console.warn("Cidades sem coordenadas em Lista_Contatos_Musicos_v6_cidades.json:", faltam);
+    if(faltam.length) console.warn("Cidades sem coordenadas em Lista_Contatos_Musicos_cidades.json:", faltam);
     ordem = ordenar();   // sorteio a cada abertura da página
     render();
     pedirLocalizacao();  // se liberada, reordena por proximidade
@@ -324,7 +439,7 @@ iniciar();
 <!--
 ================================================================
  LISTA DE CONTATOS DE MÚSICOS — CHANGELOG
- Arquivo: Lista_Contatos_Musicos_v6.html  (dados em Lista_Contatos_Musicos_v6_contatos.json e Lista_Contatos_Musicos_v6_cidades.json)
+ Arquivo: Lista_Contatos_Musicos_v7.html  (dados em Lista_Contatos_Musicos_contatos.json e Lista_Contatos_Musicos_cidades.json)
 ================================================================
 
 v1 — 2026-10-06
@@ -400,5 +515,31 @@ v6 — 2026-10-06
   - Pendências: coordenadas aproximadas (centro de cada cidade);
     número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
     do Tin Fernandes (não informado).
+----------------------------------------------------------------
+v7 — 2026-10-06
+  - Selo IFC (Integrante Fixo de Conjunto): novo campo "selos" nos
+    contatos (ex.: "selos": ["IFC"]). O selo aparece ao lado do nome
+    e, ao tocar, abre um balão explicando o significado: integrante
+    fixo de um conjunto (banda, grupo ou dupla), agenda do conjunto,
+    dificilmente aceita free-lances. O balão fecha tocando de novo no
+    selo, tocando fora ou com Esc. O texto fica no bloco SELOS do
+    script (um lugar só; aceita selos novos no futuro).
+  - A busca também encontra por selo (ex.: "IFC").
+  - Créditos no rodapé (Criado por Saulo Henrique Fernandes).
+  - Arquivos de dados sem versão no nome, para só copiar e colar:
+    Lista_Contatos_Musicos_contatos.json e Lista_Contatos_Musicos_cidades.json.
+    O HTML continua com a versão no nome; no GitHub o conteúdo dele
+    vai para o index.html.
+  - Contato de teste "Fulano (teste)": selo IFC, Ribeirão Preto/SP,
+    instrumento Sanfona, sem WhatsApp e sem Instagram de propósito.
+    Remover antes de divulgar a lista.
+  - Cidade nova no banco de cidades: Ribeirão Preto/SP.
+  - Correção: card sem botões (WhatsApp/Instagram) não deixa mais
+    um espaço vazio embaixo.
+  - Correção: as iniciais do avatar ignoram texto entre parênteses
+    (antes "Fulano (teste)" virava "F(").
+  - Pendências: coordenadas aproximadas (centro de cada cidade);
+    número do Eduardo Gregorio com 10 dígitos (confirmar); Instagram
+    do Tin Fernandes (não informado); confirmar o nome nos créditos.
 ================================================================
 -->
