@@ -1,6 +1,7 @@
 [
   {
     "nome": "Saulo Henrique Fernandes",
+    "foto": "saulo-henrique-fernandes.jpg",
     "cidades": ["Passos/MG"],
     "instrumentos": ["Acordeon", "Teclado"],
     "instagram": "saulohenriquef",
@@ -22,10 +23,11 @@
   },
   {
     "nome": "Eduardo Gregorio",
+    "foto": "eduardo-gregorio.jpg",
     "cidades": ["Franca/SP"],
     "instrumentos": ["Acordeon"],
     "instagram": "gregorio.eduu",
-    "whatsapp": "16994250769"
+    "whatsapp": "16994250768"
   },
   {
     "nome": "Willer",
@@ -85,6 +87,7 @@
   },
   {
     "nome": "Matheus Faria Gaiteiro",
+    "foto": "matheus-faria-gaiteiro.jpg",
     "cidades": ["Alpinópolis/MG"],
     "instrumentos": ["Acordeon"],
     "instagram": "matheus.gaiteiro",
@@ -96,12 +99,15 @@
     "cidades": ["Ribeirão Preto/SP"],
     "instrumentos": ["Sanfona"],
     "selos": ["IFC"],
-    "instagram": "instagram",
-    "youtube": "@youtube",
-    "email": "fulano@exemplo.com",
-    "whatsapp": "11900000001",
-    "telefones": [{ "numero": "11900000002", "rotulo": "Recados" }, { "numero": "1133334444", "rotulo": "Fixo" }],
-    "links": [{ "rotulo": "Site", "url": "https://exemplo.com" }],
-    "observacoes": "Contato de teste, só para mostrar os campos novos.\nAtendo aos finais de semana, a combinar."
+    "instagram": "",
+    "whatsapp": ""
+  },
+  {
+    "nome": "Moacir Tarabay (China)",
+    "foto": "moacir-tarabay-china.jpg",
+    "cidades": ["Conceição da Aparecida/MG"],
+    "instrumentos": ["Teclado"],
+    "instagram": "chinadipi",
+    "whatsapp": "35997345959"
   }
 ]
