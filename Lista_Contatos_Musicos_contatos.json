@@ -112,5 +112,13 @@
     "instrumentos": ["Teclado"],
     "instagram": "chinadipi",
     "whatsapp": "35997345959"
+  },
+  {
+    "nome": "Paulo Neri",
+    "foto": "paulo-neri.jpg",
+    "cidades": ["Passos/MG", "São Paulo/SP"],
+    "instrumentos": ["Bateria"],
+    "instagram": "pauloneri_ph",
+    "whatsapp": "35992439930"
   }
 ]
