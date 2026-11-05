@@ -140,8 +140,17 @@
     "nome": "Edson Fellype",
     "foto": "edson-fellype.jpg",
     "cidades": ["Passos/MG"],
-    "instrumentos": ["Cajon","Vocal"],
+    "instrumentos": ["Cajon", "Vocal"],
     "instagram": "edsonfellype.cajon",
     "whatsapp": "37998605073"
+  },
+  {
+    "nome": "Luiza",
+    "foto": "luiza.jpg",
+    "cidades": ["Itaú de Minas/MG"],
+    "instrumentos": ["Bateria"],
+    "instagram": "Luiza_batera",
+    "whatsapp": "35920008809",
+    "observacoes": "Pego freelance em toda região : precisar e só chamar 🥁🙏🏻"
   }
 ]
